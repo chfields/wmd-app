@@ -15,12 +15,25 @@ export const colors = {
   pending: "#b7791f",
 };
 
-export function Screen({ title, children, testID }: { title: string; children: ReactNode; testID?: string }) {
+export function Screen({
+  title,
+  children,
+  testID,
+  headerRight,
+}: {
+  title: string;
+  children: ReactNode;
+  testID?: string;
+  headerRight?: ReactNode;
+}) {
   return (
     <View style={styles.screen} testID={testID}>
-      <Text style={styles.title} accessibilityRole="header">
-        {title}
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+        {headerRight}
+      </View>
       {children}
     </View>
   );
@@ -75,7 +88,21 @@ export function ErrorText({ message, testID }: { message: string | null; testID?
 
 export const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 20, paddingTop: 24, gap: 16 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: 28, fontWeight: "700", color: colors.ink },
+  cartButton: { position: "relative", padding: 6 },
+  cartBadge: {
+    position: "absolute",
+    right: -4,
+    top: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.accent,
+  },
+  cartBadgeText: { color: colors.accentInk, fontSize: 11, fontWeight: "700" },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,

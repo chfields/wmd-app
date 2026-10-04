@@ -1,16 +1,17 @@
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
-import type { User } from "./src/api";
-import { type Cart, InboxScreen, OrderScreen, ShopScreen, SignInScreen } from "./src/screens";
+import type { Product, User } from "./src/api";
+import { CartScreen, type Cart, InboxScreen, OrderScreen, ShopScreen, SignInScreen } from "./src/screens";
 import { colors } from "./src/ui";
 
-type Route = { name: "shop" } | { name: "inbox" } | { name: "order"; orderId: string };
+type Route = { name: "shop" } | { name: "cart" } | { name: "inbox" } | { name: "order"; orderId: string };
 
 export default function App() {
   const [session, setSession] = useState<{ token: string; user: User } | null>(null);
   const [route, setRoute] = useState<Route>({ name: "shop" });
   const [cart, setCart] = useState<Cart>({});
+  const [cartProducts, setCartProducts] = useState<Record<string, Product>>({});
 
   return (
     <SafeAreaView style={appStyles.root}>
@@ -22,9 +23,18 @@ export default function App() {
           <View style={{ flex: 1 }}>
             {route.name === "shop" ? (
               <ShopScreen
-                token={session.token}
                 cart={cart}
                 setCart={setCart}
+                onAddProduct={(product) => setCartProducts((current) => ({ ...current, [product.id]: product }))}
+                onOpenCart={() => setRoute({ name: "cart" })}
+              />
+            ) : route.name === "cart" ? (
+              <CartScreen
+                token={session.token}
+                cart={cart}
+                products={cartProducts}
+                setCart={setCart}
+                onBack={() => setRoute({ name: "shop" })}
                 onOrdered={(order) => setRoute({ name: "order", orderId: order.id })}
               />
             ) : route.name === "inbox" ? (
@@ -34,7 +44,7 @@ export default function App() {
             )}
           </View>
           <View style={appStyles.tabs}>
-            <Tab label="Shop" active={route.name === "shop"} onPress={() => setRoute({ name: "shop" })} />
+            <Tab label="Shop" active={route.name === "shop" || route.name === "cart"} onPress={() => setRoute({ name: "shop" })} />
             <Tab label="Inbox" active={route.name === "inbox"} onPress={() => setRoute({ name: "inbox" })} />
           </View>
         </>
