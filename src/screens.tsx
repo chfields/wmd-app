@@ -1,5 +1,6 @@
 /** The four screens of the first journey: sign in, shop, order status, inbox. */
 import { useCallback, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api, ApiError, money, type Notification, type Order, type Product, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
@@ -58,20 +59,19 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (token: string, user:
 export type Cart = Record<string, number>;
 
 export function ShopScreen({
-  token,
   cart,
   setCart,
-  onOrdered,
+  onAddProduct,
+  onOpenCart,
 }: {
-  token: string;
   cart: Cart;
   setCart: (cart: Cart) => void;
-  onOrdered: (order: Order) => void;
+  onAddProduct: (product: Product) => void;
+  onOpenCart: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [placing, setPlacing] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -88,31 +88,30 @@ export function ShopScreen({
   }, [query]);
 
   const add = (product: Product, delta: number) => {
+    onAddProduct(product);
     const next = { ...cart, [product.id]: Math.max(0, Math.min(product.stock, (cart[product.id] ?? 0) + delta)) };
     if (next[product.id] === 0) delete next[product.id];
     setCart(next);
   };
 
-  const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
-  const priced = new Map(products.map((p) => [p.id, p.priceCents]));
-  const total = items.reduce((sum, item) => sum + (priced.get(item.productId) ?? 0) * item.quantity, 0);
-
-  const checkout = async () => {
-    setPlacing(true);
-    setError(null);
-    try {
-      const order = await api.placeOrder(token, items);
-      setCart({});
-      onOrdered(order);
-    } catch (err) {
-      setError(messageOf(err));
-    } finally {
-      setPlacing(false);
-    }
-  };
+  const itemCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
+  const cartLabel = itemCount === 0 ? "Cart, empty" : `Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`;
 
   return (
-    <Screen title="Shop" testID="shop-screen">
+    <Screen
+      title="Shop"
+      testID="shop-screen"
+      headerRight={
+        <Pressable testID="cart-button" style={styles.cartButton} onPress={onOpenCart} accessibilityRole="button" accessibilityLabel={cartLabel}>
+          <Ionicons name="cart-outline" size={26} color={colors.ink} />
+          {itemCount > 0 ? (
+            <View style={styles.cartBadge} testID="cart-badge">
+              <Text style={styles.cartBadgeText}>{itemCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      }
+    >
       <TextInput
         testID="search"
         style={styles.input}
@@ -154,14 +153,69 @@ export function ShopScreen({
         )}
       />
       <ErrorText message={error} testID="shop-error" />
-      {items.length > 0 ? (
-        <Button
-          label={`Place order · ${money(total)}`}
-          onPress={checkout}
-          busy={placing}
-          testID="place-order"
-        />
-      ) : null}
+    </Screen>
+  );
+}
+
+export function CartScreen({
+  token,
+  cart,
+  products,
+  setCart,
+  onBack,
+  onOrdered,
+}: {
+  token: string;
+  cart: Cart;
+  products: Record<string, Product>;
+  setCart: (cart: Cart) => void;
+  onBack: () => void;
+  onOrdered: (order: Order) => void;
+}) {
+  const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
+  const total = items.reduce((sum, item) => sum + (products[item.productId]?.priceCents ?? 0) * item.quantity, 0);
+
+  const checkout = async () => {
+    setPlacing(true);
+    setError(null);
+    try {
+      const order = await api.placeOrder(token, items);
+      setCart({});
+      onOrdered(order);
+    } catch (err) {
+      setError(messageOf(err));
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  return (
+    <Screen title="Cart" testID="cart-screen">
+      <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
+        {items.map((item) => {
+          const product = products[item.productId];
+          if (!product) return null;
+          return (
+            <View key={item.productId} style={[styles.card, styles.row]} testID={`cart-item-${item.productId}`}>
+              <Text style={styles.name}>
+                {item.quantity} × {product.name}
+              </Text>
+              <Text style={styles.price}>{money(item.quantity * product.priceCents)}</Text>
+            </View>
+          );
+        })}
+        <View style={[styles.row, { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 8 }]}>
+          <Text style={styles.name}>Total</Text>
+          <Text style={styles.price} testID="cart-total">
+            {money(total)}
+          </Text>
+        </View>
+      </ScrollView>
+      <ErrorText message={error} testID="cart-error" />
+      <Button label={`Place order · ${money(total)}`} onPress={checkout} busy={placing} disabled={items.length === 0} testID="place-order" />
+      <Button label="Keep shopping" tone="plain" onPress={onBack} testID="keep-shopping" />
     </Screen>
   );
 }

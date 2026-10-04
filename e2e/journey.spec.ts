@@ -74,10 +74,19 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
 
   await page.getByTestId("search").fill("cold");
   await expect(page.getByTestId("product-sku-eggs")).toHaveCount(0);
+  await expect(page.getByTestId("cart-badge")).toHaveCount(0);
 
   await page.getByTestId("add-sku-coffee").click();
   await page.getByTestId("add-sku-coffee").click();
   await expect(page.getByTestId("qty-sku-coffee")).toHaveText("2");
+  await expect(page.getByTestId("cart-badge")).toHaveText("2");
+  await expect(page.getByTestId("cart-button")).toHaveAccessibleName("Cart, 2 items");
+  await page.getByTestId("cart-button").click();
+  await expect(page.getByTestId("cart-screen")).toBeVisible();
+  await expect(page.getByTestId("cart-item-sku-coffee")).toContainText("Cold Brew Coffee");
+  await expect(page.getByTestId("cart-item-sku-coffee")).toContainText("2");
+  await expect(page.getByTestId("cart-item-sku-coffee")).toContainText("$17.98");
+  await expect(page.getByTestId("cart-total")).toHaveText("$17.98");
   await page.getByTestId("place-order").click();
 
   await expect(page.getByTestId("order-screen")).toBeVisible();
