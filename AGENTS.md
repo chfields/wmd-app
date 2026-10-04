@@ -23,11 +23,32 @@ npx expo install --fix      # fix incompatible package versions
 
 Run lint and typecheck before declaring any task done.
 
-## Navigation & Routing
+## This app
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+WMD Shop's mobile app, part of the Wardby mobile demo. It talks **only** to
+wmd-bff (`src/api.ts`); set `EXPO_PUBLIC_BFF_URL` to point it at a BFF.
+
+- `App.tsx` holds the session, the cart and a small route state (shop, inbox,
+  order). There is no Expo Router in this app: keep navigation in that route
+  state unless a ticket asks to introduce a router.
+- `src/screens.tsx` has the screens; `src/ui.tsx` the palette and shared
+  components. Reuse them rather than adding new styles inline.
+- Every control a test touches has a `testID` (it becomes `data-testid` on
+  web). Add one for anything new a user taps or reads.
+- Show errors by the BFF's message; the BFF's error codes are stable.
+
+## Checks
+
+```bash
+npm ci
+npm run typecheck
+EXPO_PUBLIC_BFF_URL=http://bff.test npm run build:web
+npx playwright install chromium
+npm run e2e
+```
+
+`e2e/journey.spec.ts` runs the journey on the web build against a mocked BFF
+(no backend needed). A change to what the user sees or does updates that test.
 
 ## Building with EAS
 
