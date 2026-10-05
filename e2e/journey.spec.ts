@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /** A stand-in BFF at http://bff.test with the same routes and error shape as wmd-bff. */
-async function mockBff(page: Page) {
+async function mockBff(page: Page, restockDate: string | null = null) {
   const products = [
-    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true, lowStock: false },
-    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false, lowStock: false },
-    { id: "sku-berries", name: "Mixed Berries", description: "Strawberries, blueberries and raspberries, 500 g", priceCents: 799, stock: 3, available: true, lowStock: true },
+    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true, lowStock: false, restockDate: null },
+    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false, lowStock: false, restockDate },
+    { id: "sku-berries", name: "Mixed Berries", description: "Strawberries, blueberries and raspberries, 500 g", priceCents: 799, stock: 3, available: true, lowStock: true, restockDate: null },
   ];
   const orders = new Map<string, Record<string, unknown>>();
   let polls = 0;
@@ -116,3 +116,17 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByTestId("order-total")).toBeVisible();
   await expect(page.getByTestId("order-gift-message")).toHaveCount(0);
 });
+
+for (const today of ["2026-10-19", "2026-10-20"]) {
+  test(`shop shows restock dates on ${today}`, async ({ page }) => {
+    test.skip(REAL, "Restock fixtures require the mocked BFF.");
+    await page.clock.setFixedTime(new Date(`${today}T12:00:00-07:00`));
+    await mockBff(page, "2026-10-20");
+    await page.goto("/");
+    await page.getByTestId("password").fill(PASSWORD);
+    await page.getByTestId("sign-in").click();
+    await expect(page.getByTestId("stock-label-sku-eggs")).toHaveText("Back on Oct 20");
+    await expect(page.getByTestId("stock-label-sku-coffee")).toHaveText("40 in stock");
+    await expect(page.getByTestId("add-sku-eggs")).toHaveCount(0);
+  });
+}

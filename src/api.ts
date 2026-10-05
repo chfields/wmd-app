@@ -16,6 +16,7 @@ export interface Product {
   stock: number;
   available: boolean;
   lowStock?: boolean;
+  restockDate?: string | null;
 }
 
 export interface OrderLine {
