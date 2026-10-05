@@ -84,12 +84,14 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
   products: (q?: string) => request<Product[]>(`/v1/catalog/products${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) =>
-    request<Order>("/v1/orders", {
+  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) => {
+    const msg = giftMessage?.trim();
+    return request<Order>("/v1/orders", {
       method: "POST",
-      body: JSON.stringify({ items, ...(giftMessage?.trim() ? { giftMessage } : {}) }),
+      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}) }),
       token,
-    }),
+    });
+  },
   order: (token: string, id: string) => request<Order>(`/v1/orders/${encodeURIComponent(id)}`, { token }),
   orders: (token: string) => request<Order[]>("/v1/orders", { token }),
   notifications: (token: string) => request<Notification[]>("/v1/notifications", { token }),

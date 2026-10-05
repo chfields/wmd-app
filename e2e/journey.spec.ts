@@ -98,4 +98,13 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
 
   await page.getByTestId("tab-inbox").click();
   await expect(page.getByText("Order confirmed").first()).toBeVisible();
+
+  await page.getByTestId("tab-shop").click();
+  await page.getByTestId("add-sku-coffee").click();
+  await page.getByTestId("cart-button").click();
+  await page.getByTestId("place-order").click();
+
+  await expect(page.getByTestId("order-screen")).toBeVisible();
+  await expect(page.getByTestId("order-total")).toBeVisible();
+  await expect(page.getByTestId("order-gift-message")).toHaveCount(0);
 });
