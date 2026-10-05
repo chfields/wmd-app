@@ -131,6 +131,11 @@ export function ShopScreen({
               <Text style={styles.price}>{money(item.priceCents)}</Text>
             </View>
             <Text style={styles.muted}>{item.description}</Text>
+            {item.lowStock === true ? (
+              <Text style={styles.lowStockBadge} testID={`low-stock-${item.id}`}>
+                {`Only ${item.stock} left`}
+              </Text>
+            ) : null}
             <View style={styles.row}>
               <Text style={[styles.muted, !item.available && { color: colors.danger }]}>
                 {item.available ? `${item.stock} in stock` : "Out of stock"}

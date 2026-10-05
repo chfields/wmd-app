@@ -3,8 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 /** A stand-in BFF at http://bff.test with the same routes and error shape as wmd-bff. */
 async function mockBff(page: Page) {
   const products = [
-    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true },
-    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false },
+    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true, lowStock: false },
+    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false, lowStock: false },
+    { id: "sku-berries", name: "Mixed Berries", description: "Strawberries, blueberries and raspberries, 500 g", priceCents: 799, stock: 3, available: true, lowStock: true },
   ];
   const orders = new Map<string, Record<string, unknown>>();
   let polls = 0;
@@ -72,9 +73,16 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await page.getByTestId("sign-in").click();
   await expect(page.getByTestId("product-sku-coffee")).toBeVisible();
   await expect(page.getByTestId("product-sku-eggs")).toContainText("Out of stock");
+  if (!REAL) {
+    await expect(page.getByTestId("low-stock-sku-berries")).toBeVisible();
+    await expect(page.getByTestId("low-stock-sku-berries")).toHaveText("Only 3 left");
+    await expect(page.getByTestId("low-stock-sku-coffee")).toHaveCount(0);
+    await expect(page.getByTestId("low-stock-sku-eggs")).toHaveCount(0);
+  }
 
   await page.getByTestId("search").fill("cold");
   await expect(page.getByTestId("product-sku-eggs")).toHaveCount(0);
+  if (!REAL) await expect(page.getByTestId("product-sku-berries")).toHaveCount(0);
   await expect(page.getByTestId("cart-badge")).toHaveCount(0);
 
   await page.getByTestId("add-sku-coffee").click();

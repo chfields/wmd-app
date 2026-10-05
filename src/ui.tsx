@@ -133,5 +133,15 @@ export const styles = StyleSheet.create({
   buttonLabel: { fontSize: 16, fontWeight: "600" },
   error: { color: colors.danger, fontSize: 15 },
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
+  lowStockBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
+    backgroundColor: colors.pending,
+    color: colors.accentInk,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   badgeText: { color: "#fff", fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
 });
