@@ -27,13 +27,14 @@ async function mockBff(page: Page) {
       return json(200, products.filter((p) => !q || p.name.toLowerCase().includes(q)));
     }
     if (url.pathname === "/v1/orders" && request.method() === "POST") {
-      const { items } = request.postDataJSON();
+      const { items, giftMessage } = request.postDataJSON();
       const lines = items.map((i: { productId: string; quantity: number }) => {
         const p = products.find((x) => x.id === i.productId)!;
         return { productId: p.id, name: p.name, quantity: i.quantity, priceCents: p.priceCents };
       });
       const order = { id: "3f2a9c1e-1111-2222-3333-444455556666", userId: "user-demo", status: "pending", lines,
         totalCents: lines.reduce((s: number, l: { quantity: number; priceCents: number }) => s + l.quantity * l.priceCents, 0),
+        giftMessage: giftMessage ?? null,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       orders.set(order.id, order);
       return json(201, order);
@@ -87,12 +88,23 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByTestId("cart-item-sku-coffee")).toContainText("2");
   await expect(page.getByTestId("cart-item-sku-coffee")).toContainText("$17.98");
   await expect(page.getByTestId("cart-total")).toHaveText("$17.98");
+  await page.getByTestId("gift-message").fill("Enjoy your coffee!");
   await page.getByTestId("place-order").click();
 
   await expect(page.getByTestId("order-screen")).toBeVisible();
   await expect(page.getByTestId("order-total")).toHaveText("$17.98");
+  await expect(page.getByTestId("order-gift-message")).toHaveText("Enjoy your coffee!");
   await expect(page.getByTestId("order-status")).toContainText("confirmed", { timeout: 10_000 });
 
   await page.getByTestId("tab-inbox").click();
   await expect(page.getByText("Order confirmed").first()).toBeVisible();
+
+  await page.getByTestId("tab-shop").click();
+  await page.getByTestId("add-sku-coffee").click();
+  await page.getByTestId("cart-button").click();
+  await page.getByTestId("place-order").click();
+
+  await expect(page.getByTestId("order-screen")).toBeVisible();
+  await expect(page.getByTestId("order-total")).toBeVisible();
+  await expect(page.getByTestId("order-gift-message")).toHaveCount(0);
 });

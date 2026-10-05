@@ -174,6 +174,7 @@ export function CartScreen({
 }) {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [giftMessage, setGiftMessage] = useState("");
   const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
   const total = items.reduce((sum, item) => sum + (products[item.productId]?.priceCents ?? 0) * item.quantity, 0);
 
@@ -181,7 +182,7 @@ export function CartScreen({
     setPlacing(true);
     setError(null);
     try {
-      const order = await api.placeOrder(token, items);
+      const order = await api.placeOrder(token, items, giftMessage);
       setCart({});
       onOrdered(order);
     } catch (err) {
@@ -212,6 +213,16 @@ export function CartScreen({
             {money(total)}
           </Text>
         </View>
+        <TextInput
+          testID="gift-message"
+          style={styles.input}
+          value={giftMessage}
+          onChangeText={setGiftMessage}
+          maxLength={200}
+          multiline
+          placeholder="Gift message"
+          accessibilityLabel="Gift message"
+        />
       </ScrollView>
       <ErrorText message={error} testID="cart-error" />
       <Button label={`Place order · ${money(total)}`} onPress={checkout} busy={placing} disabled={items.length === 0} testID="place-order" />
@@ -273,6 +284,14 @@ export function OrderScreen({ token, orderId, onBack }: { token: string; orderId
               {money(order.totalCents)}
             </Text>
           </View>
+          {order.giftMessage ? (
+            <View>
+              <Text style={styles.muted}>Gift message</Text>
+              <Text style={styles.name} testID="order-gift-message">
+                {order.giftMessage}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
       <Button label="Keep shopping" tone="plain" onPress={onBack} testID="keep-shopping" />
