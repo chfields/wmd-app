@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { api, ApiError, money, type Notification, type Order, type Product, type User } from "./api";
+import { api, ApiError, GIFT_MESSAGE_ENABLED, money, type Notification, type Order, type Product, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
 
 const messageOf = (error: unknown): string =>
@@ -213,16 +213,18 @@ export function CartScreen({
             {money(total)}
           </Text>
         </View>
-        <TextInput
-          testID="gift-message"
-          style={styles.input}
-          value={giftMessage}
-          onChangeText={setGiftMessage}
-          maxLength={200}
-          multiline
-          placeholder="Gift message"
-          accessibilityLabel="Gift message"
-        />
+        {GIFT_MESSAGE_ENABLED ? (
+          <TextInput
+            testID="gift-message"
+            style={styles.input}
+            value={giftMessage}
+            onChangeText={setGiftMessage}
+            maxLength={200}
+            multiline
+            placeholder="Gift message"
+            accessibilityLabel="Gift message"
+          />
+        ) : null}
       </ScrollView>
       <ErrorText message={error} testID="cart-error" />
       <Button label={`Place order · ${money(total)}`} onPress={checkout} busy={placing} disabled={items.length === 0} testID="place-order" />

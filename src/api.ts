@@ -1,6 +1,7 @@
 /** The app's only backend: wmd-bff. Set EXPO_PUBLIC_BFF_URL to point at staging. */
 
 export const BFF_URL = process.env.EXPO_PUBLIC_BFF_URL ?? "http://localhost:8080";
+export const GIFT_MESSAGE_ENABLED = process.env.EXPO_PUBLIC_GIFT_MESSAGE_ENABLED === "true";
 
 export interface User {
   id: string;
@@ -88,7 +89,7 @@ export const api = {
     const msg = giftMessage?.trim();
     return request<Order>("/v1/orders", {
       method: "POST",
-      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}) }),
+      body: JSON.stringify({ items, ...(GIFT_MESSAGE_ENABLED && msg ? { giftMessage: msg } : {}) }),
       token,
     });
   },
