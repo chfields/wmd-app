@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Runs the exported web build against a mocked BFF (see e2e/journey.spec.ts).
-// `npm run e2e` builds with the gift-message feature enabled for this mocked journey.
+// Build first: EXPO_PUBLIC_BFF_URL=http://bff.test npm run build:web
 export default defineConfig({
   testDir: "e2e",
   timeout: 30_000,

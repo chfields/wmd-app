@@ -25,8 +25,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "build:web": "expo export --platform web --clear",
-    "test:gift-message": "EXPO_PUBLIC_GIFT_MESSAGE_ENABLED=false node --experimental-transform-types --test test/gift-message.test.ts",
-    "e2e": "EXPO_PUBLIC_BFF_URL=http://bff.test EXPO_PUBLIC_GIFT_MESSAGE_ENABLED=true npm run build:web && playwright test"
+    "e2e": "playwright test"
   },
   "private": true
 }
