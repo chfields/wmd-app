@@ -15,6 +15,7 @@ export interface Product {
   priceCents: number;
   stock: number;
   available: boolean;
+  lowStock?: boolean;
 }
 
 export interface OrderLine {
