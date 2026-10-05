@@ -30,6 +30,7 @@ export interface Order {
   status: "pending" | "confirmed";
   totalCents: number;
   lines: OrderLine[];
+  giftMessage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,8 +84,12 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
   products: (q?: string) => request<Product[]>(`/v1/catalog/products${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-  placeOrder: (token: string, items: { productId: string; quantity: number }[]) =>
-    request<Order>("/v1/orders", { method: "POST", body: JSON.stringify({ items }), token }),
+  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) =>
+    request<Order>("/v1/orders", {
+      method: "POST",
+      body: JSON.stringify({ items, ...(giftMessage?.trim() ? { giftMessage } : {}) }),
+      token,
+    }),
   order: (token: string, id: string) => request<Order>(`/v1/orders/${encodeURIComponent(id)}`, { token }),
   orders: (token: string) => request<Order[]>("/v1/orders", { token }),
   notifications: (token: string) => request<Notification[]>("/v1/notifications", { token }),
