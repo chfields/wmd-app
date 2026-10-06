@@ -46,6 +46,7 @@ wmd-bff (`src/api.ts`); set `EXPO_PUBLIC_BFF_URL` to point it at a BFF.
 ```bash
 npm ci
 npm run typecheck
+npm test
 EXPO_PUBLIC_BFF_URL=http://bff.test npm run build:web
 npx playwright install chromium
 npm run e2e
@@ -53,6 +54,14 @@ npm run e2e
 
 `e2e/journey.spec.ts` runs the journey on the web build against a mocked BFF
 (no backend needed). A change to what the user sees or does updates that test.
+
+Pure logic (formatting, date handling, anything without React Native imports)
+gets unit tests in `tests/<name>.test.mjs`, run by `npm test` with Node's
+built-in test runner (`node:test`, `node:assert/strict`). Node 24 runs the
+`.ts` source directly (`--experimental-transform-types`), so keep such logic
+free of React Native imports and import it with its `.ts` extension. Don't add
+another test runner or tests that
+no script runs.
 
 ## Building with EAS
 
