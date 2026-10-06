@@ -9,3 +9,4 @@
 ## This repository
 
 - [The app adds its own "offline" and "unknown" error codes](client-synthesized-error-codes.md)
+- [On web, selected and checked states need aria-* props, not accessibilityState](web-aria-props.md)

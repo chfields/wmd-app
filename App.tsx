@@ -58,8 +58,8 @@ function Tab({ label, active, onPress }: { label: string; active: boolean; onPre
     <Pressable
       onPress={onPress}
       style={appStyles.tab}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
+      role="tab"
+      aria-selected={active}
       testID={`tab-${label.toLowerCase()}`}
     >
       <Text style={[appStyles.tabLabel, active && { color: colors.accent }]}>{label}</Text>
