@@ -3,9 +3,10 @@ import { expect, test, type Page } from "@playwright/test";
 /** A stand-in BFF at http://bff.test with the same routes and error shape as wmd-bff. */
 async function mockBff(page: Page) {
   const products = [
-    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true, lowStock: false },
-    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false, lowStock: false },
-    { id: "sku-berries", name: "Mixed Berries", description: "Strawberries, blueberries and raspberries, 500 g", priceCents: 799, stock: 3, available: true, lowStock: true },
+    { id: "sku-coffee", name: "Cold Brew Coffee", description: "Smooth cold brew, 1 L bottle", priceCents: 899, stock: 40, available: true, lowStock: false, restockDate: "2099-10-20" },
+    { id: "sku-eggs", name: "Free-Range Eggs", description: "One dozen large eggs", priceCents: 549, stock: 0, available: false, lowStock: false, restockDate: null },
+    { id: "sku-berries", name: "Mixed Berries", description: "Strawberries, blueberries and raspberries, 500 g", priceCents: 799, stock: 3, available: true, lowStock: true, restockDate: null },
+    { id: "sku-bagels", name: "Bagels", description: "Fresh bagels", priceCents: 499, stock: 0, available: false, lowStock: false, restockDate: "2099-10-20" },
   ];
   const orders = new Map<string, Record<string, unknown>>();
   let polls = 0;
@@ -74,6 +75,12 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByTestId("product-sku-coffee")).toBeVisible();
   await expect(page.getByTestId("product-sku-eggs")).toContainText("Out of stock");
   if (!REAL) {
+    await expect(page.getByTestId("stock-sku-coffee")).toHaveText("40 in stock");
+    await expect(page.getByTestId("stock-sku-eggs")).toHaveText("Out of stock");
+    await expect(page.getByTestId("stock-sku-bagels")).toHaveText("Back on Oct 20");
+    await expect(page.getByTestId("stock-sku-bagels")).toHaveCSS("color", "rgb(179, 64, 42)");
+    await expect(page.getByTestId("stock-sku-eggs")).toHaveCSS("color", "rgb(179, 64, 42)");
+    await expect(page.getByTestId("add-sku-bagels")).toHaveCount(0);
     await expect(page.getByTestId("low-stock-sku-berries")).toBeVisible();
     await expect(page.getByTestId("low-stock-sku-berries")).toHaveText("Only 3 left");
     await expect(page.getByTestId("low-stock-sku-coffee")).toHaveCount(0);

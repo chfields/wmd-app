@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api, ApiError, money, type Notification, type Order, type Product, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
+import { stockLabel } from "./restock";
 
 const messageOf = (error: unknown): string =>
   error instanceof ApiError ? error.message : "Something went wrong. Try again.";
@@ -137,8 +138,8 @@ export function ShopScreen({
               </Text>
             ) : null}
             <View style={styles.row}>
-              <Text style={[styles.muted, !item.available && { color: colors.danger }]}>
-                {item.available ? `${item.stock} in stock` : "Out of stock"}
+              <Text style={[styles.muted, !item.available && { color: colors.danger }]} testID={`stock-${item.id}`}>
+                {stockLabel(item, new Date())}
               </Text>
               {item.available ? (
                 <View style={[styles.row, { gap: 8 }]}>
