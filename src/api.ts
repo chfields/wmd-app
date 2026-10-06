@@ -1,4 +1,7 @@
 /** The app's only backend: wmd-bff. Set EXPO_PUBLIC_BFF_URL to point at staging. */
+import { productsUrl } from "./products-url.ts";
+
+export type ProductSort = "featured" | "price_asc" | "price_desc" | "name_asc";
 
 export const BFF_URL = process.env.EXPO_PUBLIC_BFF_URL ?? "http://localhost:8080";
 
@@ -85,7 +88,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
-  products: (q?: string) => request<Product[]>(`/v1/catalog/products${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+  products: (q?: string, sort?: ProductSort) => request<Product[]>(productsUrl(q, sort)),
   placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) => {
     const msg = giftMessage?.trim();
     return request<Order>("/v1/orders", {

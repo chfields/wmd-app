@@ -1,8 +1,8 @@
 /** The four screens of the first journey: sign in, shop, order status, inbox. */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { api, ApiError, money, type Notification, type Order, type Product, type User } from "./api";
+import { api, ApiError, money, type Notification, type Order, type Product, type ProductSort, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
 import { stockLabel } from "./restock";
 
@@ -59,6 +59,13 @@ export function SignInScreen({ onSignedIn }: { onSignedIn: (token: string, user:
 
 export type Cart = Record<string, number>;
 
+const sortOptions: { value: ProductSort; label: string }[] = [
+  { value: "featured", label: "Featured" },
+  { value: "price_asc", label: "Price: low to high" },
+  { value: "price_desc", label: "Price: high to low" },
+  { value: "name_asc", label: "Name (A–Z)" },
+];
+
 export function ShopScreen({
   cart,
   setCart,
@@ -71,22 +78,28 @@ export function ShopScreen({
   onOpenCart: () => void;
 }) {
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<ProductSort>("featured");
+  const previousSort = useRef(sort);
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let current = true;
-    const timer = setTimeout(() => {
+    const load = () => {
       api
-        .products(query.trim() || undefined)
+        .products(query.trim() || undefined, sort)
         .then((list) => current && (setProducts(list), setError(null)))
         .catch((err) => current && setError(messageOf(err)));
-    }, 200);
+    };
+    const sortChanged = previousSort.current !== sort;
+    previousSort.current = sort;
+    const timer = sortChanged ? undefined : setTimeout(load, 200);
+    if (sortChanged) load();
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, sort]);
 
   const add = (product: Product, delta: number) => {
     onAddProduct(product);
@@ -121,6 +134,20 @@ export function ShopScreen({
         placeholder="Search coffee, bagels, berries…"
         accessibilityLabel="Search products"
       />
+      <View style={styles.sortOptions} role="radiogroup" aria-label="Sort products">
+        {sortOptions.map((option) => (
+          <Pressable
+            key={option.value}
+            testID={`sort-${option.value}`}
+            role="radio"
+            aria-checked={sort === option.value}
+            onPress={() => setSort(option.value)}
+            style={[styles.sortOption, sort === option.value ? styles.buttonPrimary : styles.buttonPlain]}
+          >
+            <Text style={sort === option.value ? styles.sortSelectedLabel : styles.sortLabel}>{option.label}</Text>
+          </Pressable>
+        ))}
+      </View>
       <FlatList
         data={products}
         keyExtractor={(p) => p.id}
