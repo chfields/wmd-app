@@ -57,9 +57,10 @@ npm run e2e
 
 Pure logic (formatting, date handling, anything without React Native imports)
 gets unit tests in `tests/<name>.test.mjs`, run by `npm test` with Node's
-built-in test runner (`node:test`, `node:assert/strict`). Node 24 imports the
-`.ts` source directly, so keep such logic in its own module under `src/` and
-import it with its `.ts` extension. Don't add another test runner or tests that
+built-in test runner (`node:test`, `node:assert/strict`). Node 24 runs the
+`.ts` source directly (`--experimental-transform-types`), so keep such logic
+free of React Native imports and import it with its `.ts` extension. Don't add
+another test runner or tests that
 no script runs.
 
 ## Building with EAS
