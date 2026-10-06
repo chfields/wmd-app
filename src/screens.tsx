@@ -2,9 +2,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { api, ApiError, money, type Notification, type Order, type Product, type User } from "./api";
+import { api, ApiError, money, type DeliveryWindow, type Notification, type Order, type Product, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
 import { stockLabel } from "./restock";
+import { deliveryWindowLabel } from "./deliveryWindow";
 
 const messageOf = (error: unknown): string =>
   error instanceof ApiError ? error.message : "Something went wrong. Try again.";
@@ -181,6 +182,7 @@ export function CartScreen({
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [giftMessage, setGiftMessage] = useState("");
+  const [deliveryWindow, setDeliveryWindow] = useState<DeliveryWindow>("morning");
   const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
   const total = items.reduce((sum, item) => sum + (products[item.productId]?.priceCents ?? 0) * item.quantity, 0);
 
@@ -188,7 +190,7 @@ export function CartScreen({
     setPlacing(true);
     setError(null);
     try {
-      const order = await api.placeOrder(token, items, giftMessage);
+      const order = await api.placeOrder(token, items, giftMessage, deliveryWindow);
       setCart({});
       onOrdered(order);
     } catch (err) {
@@ -218,6 +220,27 @@ export function CartScreen({
           <Text style={styles.price} testID="cart-total">
             {money(total)}
           </Text>
+        </View>
+        <View role="radiogroup" accessibilityLabel="Delivery window" testID="delivery-window-picker" style={styles.card}>
+          <Text style={styles.name} testID="delivery-window-heading">
+            Delivery window
+          </Text>
+          {(["morning", "afternoon", "evening"] as const).map((window) => (
+            <Pressable
+              key={window}
+              role="radio"
+              aria-checked={deliveryWindow === window}
+              accessibilityLabel={deliveryWindowLabel(window)}
+              testID={`delivery-window-${window}`}
+              disabled={placing}
+              onPress={() => setDeliveryWindow(window)}
+              style={[styles.button, deliveryWindow === window ? styles.buttonPrimary : styles.buttonPlain]}
+            >
+              <Text style={[styles.buttonLabel, { color: deliveryWindow === window ? colors.accentInk : colors.accent }]}>
+                {deliveryWindowLabel(window)}
+              </Text>
+            </Pressable>
+          ))}
         </View>
         <TextInput
           testID="gift-message"
@@ -290,6 +313,9 @@ export function OrderScreen({ token, orderId, onBack }: { token: string; orderId
               {money(order.totalCents)}
             </Text>
           </View>
+          <Text style={styles.muted} testID="order-delivery-window">
+            {deliveryWindowLabel(order.deliveryWindow)}
+          </Text>
           {order.giftMessage ? (
             <View>
               <Text style={styles.muted}>Gift message</Text>
@@ -340,11 +366,16 @@ export function InboxScreen({ token, onOpenOrder }: { token: string; onOpenOrder
         ))}
         {orders.length > 0 ? <Text style={[styles.name, { marginTop: 12 }]}>Orders</Text> : null}
         {orders.map((order) => (
-          <Pressable key={order.id} onPress={() => onOpenOrder(order.id)}>
+          <Pressable key={order.id} onPress={() => onOpenOrder(order.id)} testID={`inbox-order-${order.id}`}>
             <View style={[styles.card, styles.row]}>
-              <Text style={styles.muted}>
-                {order.id.slice(0, 8)} · {money(order.totalCents)}
-              </Text>
+              <View>
+                <Text style={styles.muted}>
+                  {order.id.slice(0, 8)} · {money(order.totalCents)}
+                </Text>
+                <Text style={styles.muted} testID={`inbox-delivery-window-${order.id}`}>
+                  {deliveryWindowLabel(order.deliveryWindow)}
+                </Text>
+              </View>
               <StatusBadge status={order.status} />
             </View>
           </Pressable>
