@@ -26,7 +26,17 @@ async function mockBff(page: Page) {
     }
     if (url.pathname === "/v1/catalog/products") {
       const q = (url.searchParams.get("q") ?? "").toLowerCase();
-      return json(200, products.filter((p) => !q || p.name.toLowerCase().includes(q)));
+      const sort = url.searchParams.get("sort") || "featured";
+      if (!["featured", "price_asc", "price_desc", "name_asc"].includes(sort)) {
+        return json(400, { error: { code: "invalid_request", message: "Invalid sort." } });
+      }
+      const list = products.filter((p) => !q || p.name.toLowerCase().includes(q));
+      list.sort((a, b) => {
+        const price = sort === "price_asc" ? a.priceCents - b.priceCents
+          : sort === "price_desc" ? b.priceCents - a.priceCents : 0;
+        return price || a.name.localeCompare(b.name) || (sort === "featured" ? 0 : a.id.localeCompare(b.id));
+      });
+      return json(200, list);
     }
     if (url.pathname === "/v1/orders" && request.method() === "POST") {
       const { items, giftMessage } = request.postDataJSON();
@@ -85,6 +95,38 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
     await expect(page.getByTestId("low-stock-sku-berries")).toHaveText("Only 3 left");
     await expect(page.getByTestId("low-stock-sku-coffee")).toHaveCount(0);
     await expect(page.getByTestId("low-stock-sku-eggs")).toHaveCount(0);
+
+    const list = page.locator('[data-testid^="product-sku-"]');
+    const order = async (ids: string[]) => {
+      await expect(list).toHaveCount(ids.length);
+      for (const [index, id] of ids.entries()) {
+        await expect(list.nth(index)).toHaveAttribute("data-testid", `product-sku-${id}`);
+      }
+    };
+    await expect(page.getByTestId("sort-featured")).toBeChecked();
+    await order(["bagels", "coffee", "eggs", "berries"]);
+    await page.getByTestId("sort-price_asc").click();
+    await expect(page.getByTestId("sort-price_asc")).toBeChecked();
+    await expect(page.getByTestId("sort-featured")).not.toBeChecked();
+    await order(["bagels", "eggs", "berries", "coffee"]);
+    await page.getByTestId("sort-price_desc").click();
+    await expect(page.getByTestId("sort-price_desc")).toBeChecked();
+    await order(["coffee", "berries", "eggs", "bagels"]);
+    await page.getByTestId("search").fill("b");
+    await order(["coffee", "berries", "bagels"]);
+    await page.getByTestId("sort-price_asc").click();
+    await order(["bagels", "berries", "coffee"]);
+    await page.getByTestId("search").fill("");
+    await order(["bagels", "eggs", "berries", "coffee"]);
+    await page.getByTestId("sort-name_asc").click();
+    await expect(page.getByTestId("sort-name_asc")).toBeChecked();
+    await order(["bagels", "coffee", "eggs", "berries"]);
+    const featuredResponse = page.waitForResponse((response) =>
+      response.url() === "http://bff.test/v1/catalog/products" && response.status() === 200);
+    await page.getByTestId("sort-featured").click();
+    await featuredResponse;
+    await expect(page.getByTestId("sort-featured")).toBeChecked();
+    await order(["bagels", "coffee", "eggs", "berries"]);
   }
 
   await page.getByTestId("search").fill("cold");
@@ -115,6 +157,7 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByText("Order confirmed").first()).toBeVisible();
 
   await page.getByTestId("tab-shop").click();
+  await expect(page.getByTestId("sort-featured")).toBeChecked();
   await page.getByTestId("add-sku-coffee").click();
   await page.getByTestId("cart-button").click();
   await page.getByTestId("place-order").click();
