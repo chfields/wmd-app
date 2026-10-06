@@ -15,6 +15,7 @@ export interface Product {
   priceCents: number;
   stock: number;
   available: boolean;
+  restockDate?: string | null;
   lowStock?: boolean;
 }
 
