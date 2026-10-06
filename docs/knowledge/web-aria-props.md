@@ -21,7 +21,7 @@ wardby:
       lines: [60, 62]
       symbol: Tab selected state
       sha: 7ce9f681f59d3b0967d036393e2af8254ad96799
-      spanHash: sha256:
+      spanHash: sha256:873d4909b7585f2652b5e2788730dd4840a29002ab86c9a30f13d6bb17e093e4
   confidence: high
 ---
 
