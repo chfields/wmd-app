@@ -26,6 +26,8 @@ export interface OrderLine {
   priceCents: number;
 }
 
+export type DeliveryWindow = "morning" | "afternoon" | "evening";
+
 export interface Order {
   id: string;
   userId: string;
@@ -33,6 +35,7 @@ export interface Order {
   totalCents: number;
   lines: OrderLine[];
   giftMessage: string | null;
+  deliveryWindow?: DeliveryWindow;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,11 +89,11 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
   products: (q?: string) => request<Product[]>(`/v1/catalog/products${q ? `?q=${encodeURIComponent(q)}` : ""}`),
-  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) => {
+  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string, deliveryWindow?: DeliveryWindow) => {
     const msg = giftMessage?.trim();
     return request<Order>("/v1/orders", {
       method: "POST",
-      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}) }),
+      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}), ...(deliveryWindow ? { deliveryWindow } : {}) }),
       token,
     });
   },

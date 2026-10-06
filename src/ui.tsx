@@ -112,6 +112,8 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  selectedOption: { borderColor: colors.accent },
+  optionLabel: { flexShrink: 1 },
   name: { fontSize: 17, fontWeight: "600", color: colors.ink },
   muted: { fontSize: 14, color: colors.muted },
   price: { fontSize: 16, fontWeight: "600", color: colors.ink },
