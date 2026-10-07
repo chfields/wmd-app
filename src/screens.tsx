@@ -1,7 +1,7 @@
 /** The four screens of the first journey: sign in, shop, order status, inbox. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api, ApiError, money, type Notification, type Order, type Product, type ProductSort, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
 import { stockLabel } from "./restock";
@@ -79,6 +79,8 @@ export function ShopScreen({
 }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProductSort>("featured");
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortLabel = sortOptions.find((option) => option.value === sort)!.label;
   const previousSort = useRef(sort);
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -126,28 +128,57 @@ export function ShopScreen({
         </Pressable>
       }
     >
-      <TextInput
-        testID="search"
-        style={styles.input}
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search coffee, bagels, berries…"
-        accessibilityLabel="Search products"
-      />
-      <View style={styles.sortOptions} role="radiogroup" aria-label="Sort products">
-        {sortOptions.map((option) => (
-          <Pressable
-            key={option.value}
-            testID={`sort-${option.value}`}
-            role="radio"
-            aria-checked={sort === option.value}
-            onPress={() => setSort(option.value)}
-            style={[styles.sortOption, sort === option.value ? styles.buttonPrimary : styles.buttonPlain]}
-          >
-            <Text style={sort === option.value ? styles.sortSelectedLabel : styles.sortLabel}>{option.label}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.searchRow}>
+        <TextInput
+          testID="search"
+          style={[styles.input, styles.searchInput]}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search coffee, bagels, berries…"
+          accessibilityLabel="Search products"
+        />
+        <Pressable
+          testID="sort-button"
+          role="button"
+          aria-haspopup="menu"
+          aria-expanded={sortMenuOpen}
+          aria-label={`Sort products, current: ${sortLabel}`}
+          onPress={() => setSortMenuOpen(true)}
+          style={[styles.sortButton, styles.buttonPlain]}
+        >
+          <Text style={styles.sortLabel}>{`Sort: ${sortLabel}`}</Text>
+        </Pressable>
       </View>
+      {sortMenuOpen ? (
+        <Modal transparent animationType="none" onRequestClose={() => setSortMenuOpen(false)}>
+          <View style={styles.sortOverlay}>
+            <Pressable
+              testID="sort-menu-backdrop"
+              style={styles.sortBackdrop}
+              onPress={() => setSortMenuOpen(false)}
+              role="button"
+              aria-label="Close sort menu"
+            />
+            <View testID="sort-menu" style={styles.sortMenu} role="radiogroup" aria-label="Sort products">
+              {sortOptions.map((option) => (
+                <Pressable
+                  key={option.value}
+                  testID={`sort-${option.value}`}
+                  role="radio"
+                  aria-checked={sort === option.value}
+                  onPress={() => {
+                    setSort(option.value);
+                    setSortMenuOpen(false);
+                  }}
+                  style={[styles.sortOption, sort === option.value ? styles.buttonPrimary : styles.buttonPlain]}
+                >
+                  <Text style={sort === option.value ? styles.sortSelectedLabel : styles.sortLabel}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
       <FlatList
         data={products}
         keyExtractor={(p) => p.id}

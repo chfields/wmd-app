@@ -103,29 +103,51 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
         await expect(list.nth(index)).toHaveAttribute("data-testid", `product-sku-${id}`);
       }
     };
+    const sortButton = page.getByTestId("sort-button");
+    const openSortMenu = async () => {
+      await sortButton.click();
+      await expect(sortButton).toHaveAttribute("aria-expanded", "true");
+      await expect(page.getByTestId("sort-menu")).toBeVisible();
+    };
+    const expectSortClosed = async (label: string) => {
+      await expect(sortButton).toHaveText(`Sort: ${label}`);
+      await expect(sortButton).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByTestId("sort-menu")).toHaveCount(0);
+    };
+    const chooseSort = async (value: string, label: string) => {
+      await openSortMenu();
+      await page.getByTestId(`sort-${value}`).click();
+      await expectSortClosed(label);
+      await openSortMenu();
+      await expect(page.getByTestId(`sort-${value}`)).toBeChecked();
+      if (value !== "featured") {
+        await expect(page.getByTestId("sort-featured")).not.toBeChecked();
+      }
+      await page.getByTestId("sort-menu-backdrop").click({ position: { x: 5, y: 5 } });
+      await expectSortClosed(label);
+    };
+    await expectSortClosed("Featured");
+    await openSortMenu();
     await expect(page.getByTestId("sort-featured")).toBeChecked();
+    await page.getByTestId("sort-menu-backdrop").click({ position: { x: 5, y: 5 } });
+    await expectSortClosed("Featured");
     await order(["bagels", "coffee", "eggs", "berries"]);
-    await page.getByTestId("sort-price_asc").click();
-    await expect(page.getByTestId("sort-price_asc")).toBeChecked();
-    await expect(page.getByTestId("sort-featured")).not.toBeChecked();
+    await chooseSort("price_asc", "Price: low to high");
     await order(["bagels", "eggs", "berries", "coffee"]);
-    await page.getByTestId("sort-price_desc").click();
-    await expect(page.getByTestId("sort-price_desc")).toBeChecked();
+    await chooseSort("price_desc", "Price: high to low");
     await order(["coffee", "berries", "eggs", "bagels"]);
     await page.getByTestId("search").fill("b");
     await order(["coffee", "berries", "bagels"]);
-    await page.getByTestId("sort-price_asc").click();
+    await chooseSort("price_asc", "Price: low to high");
     await order(["bagels", "berries", "coffee"]);
     await page.getByTestId("search").fill("");
     await order(["bagels", "eggs", "berries", "coffee"]);
-    await page.getByTestId("sort-name_asc").click();
-    await expect(page.getByTestId("sort-name_asc")).toBeChecked();
+    await chooseSort("name_asc", "Name (A–Z)");
     await order(["bagels", "coffee", "eggs", "berries"]);
     const featuredResponse = page.waitForResponse((response) =>
       response.url() === "http://bff.test/v1/catalog/products" && response.status() === 200);
-    await page.getByTestId("sort-featured").click();
+    await chooseSort("featured", "Featured");
     await featuredResponse;
-    await expect(page.getByTestId("sort-featured")).toBeChecked();
     await order(["bagels", "coffee", "eggs", "berries"]);
   }
 
@@ -157,7 +179,7 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByText("Order confirmed").first()).toBeVisible();
 
   await page.getByTestId("tab-shop").click();
-  await expect(page.getByTestId("sort-featured")).toBeChecked();
+  await expect(page.getByTestId("sort-button")).toHaveText("Sort: Featured");
   await page.getByTestId("add-sku-coffee").click();
   await page.getByTestId("cart-button").click();
   await page.getByTestId("place-order").click();
