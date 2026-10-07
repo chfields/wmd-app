@@ -1,6 +1,8 @@
 /** The app's only backend: wmd-bff. Set EXPO_PUBLIC_BFF_URL to point at staging. */
 import { productsUrl } from "./products-url.ts";
 
+export type DeliveryWindow = "morning" | "afternoon" | "evening";
+
 export type ProductSort = "featured" | "price_asc" | "price_desc" | "name_asc";
 
 export const BFF_URL = process.env.EXPO_PUBLIC_BFF_URL ?? "http://localhost:8080";
@@ -36,6 +38,7 @@ export interface Order {
   totalCents: number;
   lines: OrderLine[];
   giftMessage: string | null;
+  deliveryWindow?: DeliveryWindow;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,11 +92,11 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
   products: (q?: string, sort?: ProductSort) => request<Product[]>(productsUrl(q, sort)),
-  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string) => {
+  placeOrder: (token: string, items: { productId: string; quantity: number }[], giftMessage?: string, deliveryWindow?: DeliveryWindow) => {
     const msg = giftMessage?.trim();
     return request<Order>("/v1/orders", {
       method: "POST",
-      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}) }),
+      body: JSON.stringify({ items, ...(msg ? { giftMessage: msg } : {}), ...(deliveryWindow ? { deliveryWindow } : {}) }),
       token,
     });
   },
