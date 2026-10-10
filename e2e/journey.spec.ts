@@ -9,6 +9,10 @@ async function mockBff(page: Page) {
     { id: "sku-bagels", name: "Bagels", description: "Fresh bagels", priceCents: 499, stock: 0, available: false, lowStock: false, restockDate: "2099-10-20" },
   ];
   const orders = new Map<string, Record<string, unknown>>();
+  const orderResponse = (order: Record<string, unknown>) => ({
+    ...order,
+    itemCount: (order.lines as { quantity: number }[] | undefined)?.reduce((sum, line) => sum + line.quantity, 0) ?? 0,
+  });
   let polls = 0;
   await page.route("http://bff.test/**", async (route) => {
     const request = route.request();
@@ -59,9 +63,9 @@ async function mockBff(page: Page) {
       const order = orders.get(url.pathname.split("/").pop()!)!;
       // Confirmed on the second poll, as when notification-service answers a moment later.
       if (++polls >= 2) order.status = "confirmed";
-      return json(200, order);
+      return json(200, orderResponse(order));
     }
-    if (url.pathname === "/v1/orders") return json(200, [...orders.values()]);
+    if (url.pathname === "/v1/orders") return json(200, [...orders.values()].map(orderResponse));
     if (url.pathname === "/v1/notifications") {
       return json(200, [...orders.values()].filter((o) => o.status === "confirmed").map((o) => ({
         id: `n-${o.id}`, orderId: o.id, title: "Order confirmed", body: `Your order ${String(o.id).slice(0, 8)} for $${(Number(o.totalCents) / 100).toFixed(2)} is confirmed for delivery in the ${o.deliveryWindow === "evening" ? "evening (5–9pm)" : o.deliveryWindow === "afternoon" ? "afternoon (12–5pm)" : "morning (8am–12pm)"}.${o.giftMessage ? ` Gift message: ${o.giftMessage}` : ""}`,
@@ -186,6 +190,7 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await page.getByTestId("tab-inbox").click();
   await expect(page.getByText("Order confirmed").first()).toBeVisible();
   await expect(page.locator('[data-testid^="inbox-delivery-window-"]').last()).toHaveText("Morning (8am–12pm)");
+  await expect(page.locator('[data-testid^="inbox-item-count-"]').last()).toHaveText("2 items");
 
   await page.getByTestId("tab-shop").click();
   await expect(page.getByTestId("sort-button")).toHaveText("Sort: Featured");
@@ -204,5 +209,31 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.getByTestId("order-status")).toContainText("confirmed", { timeout: 10_000 });
   await page.getByTestId("tab-inbox").click();
   await expect(page.locator('[data-testid^="inbox-delivery-window-"]').last()).toHaveText("Evening (5–9pm)");
+  await expect(page.locator('[data-testid^="inbox-item-count-"]').last()).toHaveText("1 item");
   await expect(page.locator('[data-testid^="notification-"]').last()).toContainText("confirmed for delivery in the evening (5–9pm).");
+});
+
+test("inbox displays BFF item counts and omits missing counts without deriving them from lines", async ({ page }) => {
+  test.skip(REAL, "Uses fixed BFF responses.");
+  await mockBff(page);
+  await page.route("http://bff.test/v1/orders", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    headers: { "access-control-allow-origin": "*" },
+    body: JSON.stringify([1, 0, 5, undefined].map((itemCount, index) => ({
+      id: `count-${index}`, userId: "user-demo", status: "confirmed", totalCents: 899,
+      lines: [{ productId: "sku-coffee", name: "Cold Brew Coffee", quantity: 9, priceCents: 899 }],
+      itemCount, giftMessage: null, createdAt: "2026-10-10T00:00:00Z", updatedAt: "2026-10-10T00:00:00Z",
+    }))),
+  }));
+  await page.goto("/");
+  await page.getByTestId("password").fill(PASSWORD);
+  await page.getByTestId("sign-in").click();
+  await expect(page.getByTestId("shop-screen")).toBeVisible();
+  await page.getByTestId("tab-inbox").click();
+  await expect(page.getByTestId("inbox-item-count-count-0")).toHaveText("1 item");
+  await expect(page.getByTestId("inbox-item-count-count-1")).toHaveText("0 items");
+  await expect(page.getByTestId("inbox-item-count-count-2")).toHaveText("5 items");
+  await expect(page.getByTestId("inbox-order-count-3")).toBeVisible();
+  await expect(page.getByTestId("inbox-item-count-count-3")).toHaveCount(0);
 });
