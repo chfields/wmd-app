@@ -5,6 +5,7 @@ import { FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "r
 import { api, ApiError, money, type DeliveryWindow, type Notification, type Order, type Product, type ProductSort, type User } from "./api";
 import { Button, colors, ErrorText, Screen, styles } from "./ui";
 import { deliveryWindowLabel } from "./delivery-window";
+import { itemCountLabel } from "./item-count";
 import { stockLabel } from "./restock";
 
 const messageOf = (error: unknown): string =>
@@ -429,6 +430,11 @@ export function InboxScreen({ token, onOpenOrder }: { token: string; onOpenOrder
                 <Text style={styles.muted} testID={`inbox-delivery-window-${order.id}`}>
                   {deliveryWindowLabel(order.deliveryWindow)}
                 </Text>
+                {order.itemCount !== undefined ? (
+                  <Text style={styles.muted} testID={`inbox-item-count-${order.id}`}>
+                    {itemCountLabel(order.itemCount)}
+                  </Text>
+                ) : null}
               </View>
               <StatusBadge status={order.status} />
             </View>

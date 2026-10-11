@@ -36,6 +36,7 @@ export interface Order {
   userId: string;
   status: "pending" | "confirmed";
   totalCents: number;
+  itemCount?: number;
   lines: OrderLine[];
   giftMessage: string | null;
   deliveryWindow?: DeliveryWindow;
