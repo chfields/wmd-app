@@ -237,3 +237,31 @@ test("inbox displays BFF item counts and omits missing counts without deriving t
   await expect(page.getByTestId("inbox-order-count-3")).toBeVisible();
   await expect(page.getByTestId("inbox-item-count-count-3")).toHaveCount(0);
 });
+
+test("Settings applies System, Dark and Light themes immediately", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  if (!REAL) await mockBff(page);
+  await page.goto("/");
+  await page.getByTestId("password").fill(PASSWORD);
+  await page.getByTestId("sign-in").click();
+  await page.getByTestId("tab-settings").click();
+  await expect(page.getByTestId("settings-screen")).toBeVisible();
+  await expect(page.getByTestId("tab-settings")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("theme-option-system")).toHaveAttribute("aria-checked", "true");
+  const root = page.getByTestId("app-root");
+  await expect(root).toHaveCSS("background-color", "rgb(246, 244, 239)");
+  await page.getByTestId("theme-option-dark").click();
+  await expect(page.getByTestId("theme-option-dark")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("theme-option-system")).toHaveAttribute("aria-checked", "false");
+  await expect(root).toHaveCSS("background-color", "rgb(18, 24, 21)");
+  await page.getByTestId("theme-option-light").click();
+  await expect(page.getByTestId("theme-option-light")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("theme-option-dark")).toHaveAttribute("aria-checked", "false");
+  await expect(root).toHaveCSS("background-color", "rgb(246, 244, 239)");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(root).toHaveCSS("background-color", "rgb(246, 244, 239)");
+  await page.getByTestId("theme-option-system").click();
+  await expect(root).toHaveCSS("background-color", "rgb(18, 24, 21)");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(root).toHaveCSS("background-color", "rgb(246, 244, 239)");
+});

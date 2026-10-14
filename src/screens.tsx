@@ -3,15 +3,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api, ApiError, money, type DeliveryWindow, type Notification, type Order, type Product, type ProductSort, type User } from "./api";
-import { Button, colors, ErrorText, Screen, styles } from "./ui";
+import { Button, ErrorText, Screen, useStyles } from "./ui";
 import { deliveryWindowLabel } from "./delivery-window";
 import { itemCountLabel } from "./item-count";
 import { stockLabel } from "./restock";
+import { THEME_OPTIONS } from "./theme";
+import { useTheme } from "./theme-context";
 
 const messageOf = (error: unknown): string =>
   error instanceof ApiError ? error.message : "Something went wrong. Try again.";
 
 export function SignInScreen({ onSignedIn }: { onSignedIn: (token: string, user: User) => void }) {
+  const styles = useStyles();
   const [email, setEmail] = useState("demo@wmd.shop");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -79,6 +82,8 @@ export function ShopScreen({
   onAddProduct: (product: Product) => void;
   onOpenCart: () => void;
 }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProductSort>("featured");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
@@ -198,19 +203,19 @@ export function ShopScreen({
               </Text>
             ) : null}
             <View style={styles.row}>
-              <Text style={[styles.muted, !item.available && { color: colors.danger }]} testID={`stock-${item.id}`}>
+              <Text style={[styles.muted, !item.available && styles.dangerText]} testID={`stock-${item.id}`}>
                 {stockLabel(item, new Date())}
               </Text>
               {item.available ? (
                 <View style={[styles.row, { gap: 8 }]}>
                   {cart[item.id] ? (
                     <Pressable onPress={() => add(item, -1)} testID={`remove-${item.id}`} accessibilityLabel={`Remove one ${item.name}`}>
-                      <Text style={[styles.name, { color: colors.accent, paddingHorizontal: 8 }]}>−</Text>
+                      <Text style={[styles.name, styles.quantityControl]}>−</Text>
                     </Pressable>
                   ) : null}
                   {cart[item.id] ? <Text style={styles.name} testID={`qty-${item.id}`}>{cart[item.id]}</Text> : null}
                   <Pressable onPress={() => add(item, 1)} testID={`add-${item.id}`} accessibilityLabel={`Add one ${item.name}`}>
-                    <Text style={[styles.name, { color: colors.accent, paddingHorizontal: 8 }]}>+</Text>
+                    <Text style={[styles.name, styles.quantityControl]}>+</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -238,6 +243,7 @@ export function CartScreen({
   onBack: () => void;
   onOrdered: (order: Order) => void;
 }) {
+  const styles = useStyles();
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [giftMessage, setGiftMessage] = useState("");
@@ -274,7 +280,7 @@ export function CartScreen({
             </View>
           );
         })}
-        <View style={[styles.row, { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 8 }]}>
+        <View style={[styles.row, styles.totalRow]}>
           <Text style={styles.name}>Total</Text>
           <Text style={styles.price} testID="cart-total">
             {money(total)}
@@ -316,14 +322,16 @@ export function CartScreen({
 }
 
 function StatusBadge({ status }: { status: Order["status"] }) {
+  const styles = useStyles();
   return (
-    <View style={[styles.badge, { backgroundColor: status === "confirmed" ? colors.good : colors.pending }]} testID="order-status">
+    <View style={[styles.badge, status === "confirmed" ? styles.confirmedBadge : styles.pendingBadge]} testID="order-status">
       <Text style={styles.badgeText}>{status}</Text>
     </View>
   );
 }
 
 export function OrderScreen({ token, orderId, onBack }: { token: string; orderId: string; onBack: () => void }) {
+  const styles = useStyles();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -362,7 +370,7 @@ export function OrderScreen({ token, orderId, onBack }: { token: string; orderId
               <Text style={styles.price}>{money(line.quantity * line.priceCents)}</Text>
             </View>
           ))}
-          <View style={[styles.row, { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 8 }]}>
+          <View style={[styles.row, styles.totalRow]}>
             <Text style={styles.name}>Total</Text>
             <Text style={styles.price} testID="order-total">
               {money(order.totalCents)}
@@ -387,6 +395,7 @@ export function OrderScreen({ token, orderId, onBack }: { token: string; orderId
 }
 
 export function InboxScreen({ token, onOpenOrder }: { token: string; onOpenOrder: (id: string) => void }) {
+  const styles = useStyles();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -442,6 +451,31 @@ export function InboxScreen({ token, onOpenOrder }: { token: string; onOpenOrder
         ))}
         <Button label="Refresh" tone="plain" onPress={load} testID="refresh-inbox" />
       </ScrollView>
+    </Screen>
+  );
+}
+
+
+export function SettingsScreen() {
+  const styles = useStyles();
+  const { preference, setPreference } = useTheme();
+  return (
+    <Screen title="Settings" testID="settings-screen">
+      <View style={styles.card} role="radiogroup" aria-label="App theme" testID="theme-picker">
+        <Text style={styles.name} testID="theme-heading">App theme</Text>
+        {THEME_OPTIONS.map((option) => (
+          <Pressable
+            key={option.value}
+            testID={`theme-option-${option.value}`}
+            role="radio"
+            aria-checked={preference === option.value}
+            onPress={() => setPreference(option.value)}
+            style={[styles.sortOption, preference === option.value ? styles.buttonPrimary : styles.buttonPlain]}
+          >
+            <Text style={preference === option.value ? styles.sortSelectedLabel : styles.sortLabel}>{option.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </Screen>
   );
 }
