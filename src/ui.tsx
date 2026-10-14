@@ -1,19 +1,9 @@
-/** Shared look: one palette, a button and a screen frame. */
-import type { ReactNode } from "react";
+/** Shared look: the active palette, a button and a screen frame. */
+import { useMemo, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
-export const colors = {
-  background: "#f6f4ef",
-  surface: "#ffffff",
-  ink: "#1d2420",
-  muted: "#66706a",
-  line: "#e2ded5",
-  accent: "#2f6b4f",
-  accentInk: "#ffffff",
-  danger: "#b3402a",
-  good: "#2f6b4f",
-  pending: "#b7791f",
-};
+import { useTheme } from "./theme-context";
+import type { ThemeColors } from "./theme";
 
 export function Screen({
   title,
@@ -26,6 +16,7 @@ export function Screen({
   testID?: string;
   headerRight?: ReactNode;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.screen} testID={testID}>
       <View style={styles.header}>
@@ -54,6 +45,8 @@ export function Button({
   testID?: string;
   tone?: "primary" | "plain";
 }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const primary = tone === "primary";
   return (
     <Pressable
@@ -71,13 +64,14 @@ export function Button({
       {busy ? (
         <ActivityIndicator color={primary ? colors.accentInk : colors.accent} />
       ) : (
-        <Text style={[styles.buttonLabel, { color: primary ? colors.accentInk : colors.accent }]}>{label}</Text>
+        <Text style={[styles.buttonLabel, primary ? styles.primaryLabel : styles.plainLabel]}>{label}</Text>
       )}
     </Pressable>
   );
 }
 
 export function ErrorText({ message, testID }: { message: string | null; testID?: string }) {
+  const styles = useStyles();
   if (!message) return null;
   return (
     <Text style={styles.error} testID={testID} accessibilityLiveRegion="polite">
@@ -86,7 +80,19 @@ export function ErrorText({ message, testID }: { message: string | null; testID?
   );
 }
 
-export const styles = StyleSheet.create({
+export function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => makeStyles(colors), [colors]);
+}
+
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  primaryLabel: { color: colors.accentInk },
+  plainLabel: { color: colors.accent },
+  dangerText: { color: colors.danger },
+  quantityControl: { color: colors.accent, paddingHorizontal: 8 },
+  totalRow: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 8 },
+  confirmedBadge: { backgroundColor: colors.good },
+  pendingBadge: { backgroundColor: colors.pending },
   screen: { flex: 1, paddingHorizontal: 20, paddingTop: 24, gap: 16 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: 28, fontWeight: "700", color: colors.ink },
@@ -152,5 +158,5 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  badgeText: { color: "#fff", fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  badgeText: { color: colors.accentInk, fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
 });
