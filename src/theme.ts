@@ -8,13 +8,13 @@ export const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 ];
 
 export const lightColors = {
-  background: "#f6f4ef",
+  background: "#f0f7fc",
   surface: "#ffffff",
-  ink: "#1d2420",
-  muted: "#66706a",
-  line: "#e2ded5",
-  accent: "#2f6b4f",
-  accentInk: "#ffffff",
+  ink: "#14212b",
+  muted: "#5f7180",
+  line: "#d4e5f2",
+  accent: "#5aaee6",
+  accentInk: "#0b2233",
   danger: "#b3402a",
   good: "#2f6b4f",
   pending: "#b7791f",
@@ -23,13 +23,13 @@ export const lightColors = {
 export type ThemeColors = typeof lightColors;
 
 export const darkColors: ThemeColors = {
-  background: "#121815",
-  surface: "#1d2822",
-  ink: "#f1f4ef",
-  muted: "#a8b5ac",
-  line: "#3b4b41",
-  accent: "#9bd5b1",
-  accentInk: "#121815",
+  background: "#0f1820",
+  surface: "#1a2631",
+  ink: "#eef5fb",
+  muted: "#a3b6c6",
+  line: "#34495b",
+  accent: "#8fd0f5",
+  accentInk: "#0f1820",
   danger: "#ff9b85",
   good: "#9bd5b1",
   pending: "#edbe72",
