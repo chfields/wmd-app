@@ -6,6 +6,7 @@ import { api, ApiError, money, type DeliveryWindow, type Notification, type Orde
 import { Button, ErrorText, Screen, useStyles } from "./ui";
 import { deliveryWindowLabel } from "./delivery-window";
 import { itemCountLabel } from "./item-count";
+import { INBOX_EMPTY_TEXT } from "./inbox-empty";
 import { stockLabel } from "./restock";
 import { THEME_OPTIONS } from "./theme";
 import { useTheme } from "./theme-context";
@@ -419,7 +420,7 @@ export function InboxScreen({ token, onOpenOrder }: { token: string; onOpenOrder
     <Screen title="Inbox" testID="inbox-screen">
       <ErrorText message={error} />
       <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 16 }}>
-        {notifications.length === 0 ? <Text style={styles.muted}>No notifications yet.</Text> : null}
+        {notifications.length === 0 ? <Text style={styles.muted} testID="inbox-empty">{INBOX_EMPTY_TEXT}</Text> : null}
         {notifications.map((n) => (
           <Pressable key={n.id} onPress={() => onOpenOrder(n.orderId)} testID={`notification-${n.orderId}`}>
             <View style={styles.card}>
