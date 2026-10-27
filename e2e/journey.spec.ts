@@ -213,6 +213,16 @@ test("sign in, browse, order, see it confirmed and in the inbox", async ({ page 
   await expect(page.locator('[data-testid^="notification-"]').last()).toContainText("confirmed for delivery in the evening (5–9pm).");
 });
 
+test("empty inbox explains where order updates appear", async ({ page }) => {
+  test.skip(REAL, "Uses an empty mocked inbox.");
+  await mockBff(page);
+  await page.goto("/");
+  await page.getByTestId("password").fill(PASSWORD);
+  await page.getByTestId("sign-in").click();
+  await page.getByTestId("tab-inbox").click();
+  await expect(page.getByTestId("inbox-empty")).toHaveText("No notifications yet. Place an order and its updates will appear here.");
+});
+
 test("inbox displays BFF item counts and omits missing counts without deriving them from lines", async ({ page }) => {
   test.skip(REAL, "Uses fixed BFF responses.");
   await mockBff(page);
